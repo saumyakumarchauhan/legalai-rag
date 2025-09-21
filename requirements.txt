@@ -1,0 +1,31 @@
+flask
+flask-cors
+python-dotenv
+
+# Google Gemini
+google-generativeai
+
+# Vector database
+faiss-cpu
+torch
+
+# PDF handling
+PyMuPDF
+PyPDF2
+pdfminer.six
+
+# OCR
+pytesseract
+Pillow
+
+# LangChain
+langchain
+langchain-community
+
+# Utilities
+numpy
+
+sentence_transformers
+python-docx
+langdetect
+easyocr

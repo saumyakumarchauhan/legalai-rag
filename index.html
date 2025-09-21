@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LegalAI - Advanced Legal Document Analysis with RAG Pipeline">
+    <meta name="keywords" content="legal AI, document analysis, legal research, RAG pipeline">
+    <meta name="author" content="Legal AI Team">
+   
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LegalAI">
+   
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+   
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+   
+    <title>LegalAI - Advanced Document Analysis</title>
+   
+    <style>
+        :root {
+            --primary-color: #1e40af;
+            --primary-dark: #1e3a8a;
+            --primary-light: #3b82f6;
+            --secondary-color: #7c3aed;
+            --secondary-dark: #6d28d9;
+            --accent-color: #059669;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #e2e8f0;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --border-color: #e2e8f0;
+            --shadow-light: rgba(0, 0, 0, 0.1);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+            --shadow-strong: rgba(0, 0, 0, 0.25);
+            --sidebar-width: 320px;
+            --header-height: 70px;
+            --border-radius: 12px;
+            --border-radius-sm: 6px;
+            --border-radius-lg: 18px;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease;
+            --transition-slow: 0.35s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --bg-tertiary: #4a5568;
+            --text-primary: #f7fafc;
+            --text-secondary: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-color: #4a5568;
+            --shadow-light: rgba(0, 0, 0, 0.3);
+            --shadow-medium: rgba(0, 0, 0, 0.4);
+            --shadow-strong: rgba(0, 0, 0, 0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            transition: background-color var(--transition-normal), color var(--transition-normal);
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity var(--transition-slow), visibility var(--transition-slow);
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .loading-logo {
+            margin-bottom: 2rem;
+            animation: pulse 2s infinite;
+        }
+
+        .loading-content h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-content p {
+            font-size: 1.125rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-areas:
+                "nav nav"
+                "sidebar main";
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: var(--header-height) 1fr;
+            height: 100vh;
+            transition: grid-template-columns var(--transition-normal);
+        }
+
+        .top-nav {
+            grid-area: nav;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .nav-brand i {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.5rem;
+        }
+
+        .version-badge {
+            font-size: 0.75rem;
+            background: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--border-radius-sm);
+            font-weight: 500;
+        }
+
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: var(--border-radius);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+        }
+
+        .nav-btn:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+        }
+
+        .view-modes {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-secondary);
+            padding: 0.25rem;
+            border-radius: var(--border-radius);
+            margin-left: 1rem;
+        }
+
+        .view-mode-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .view-mode-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+       
+        .sidebar-section {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-section h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .doc-action-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+        }
+
+        .doc-action-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .doc-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .doc-action-btn.secondary {
+            background: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+
+        .doc-action-btn.secondary:hover {
+            background: var(--secondary-dark);
+        }
+
+        .chat-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .chat-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: var(--border-radius);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .chat-list-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .chat-list-item.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .chat-title-text {
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+       
+        .chat-list-item-delete {
+            margin-left: 0.5rem;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .chat-list-item:hover .chat-list-item-delete {
+            opacity: 1;
+        }
+
+        .chat-list-item.active .chat-list-item-delete {
+            color: white;
+        }
+
+        .btn-upload {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            background: rgba(30, 64, 175, 0.05);
+            color: var(--primary-color);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-upload:hover {
+            background: rgba(30, 64, 175, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-upload.has-file {
+            border-style: solid;
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .document-info {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .document-info.visible {
+            display: block;
+        }
+
+        .doc-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .doc-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .analysis-section {
+            padding: 0 1.5rem;
+            flex: 1;
+        }
+
+        .analysis-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.processing {
+            background: var(--warning-color);
+        }
+
+        .status-indicator.complete {
+            background: var(--success-color);
+            animation: none;
+        }
+
+        .analysis-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .main-content {
+            grid-area: main;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-info h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-info p {
+            color: var(--text-muted);
+        }
+       
+        .chat-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-btn {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all var(--transition-fast);
+        }
+
+        .chat-btn:hover {
+            background: var(--bg-tertiary);
+        }
+       
+        .chat-btn.primary {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+       
+        .chat-btn.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .content-view {
+            display: none;
+        }
+
+        .content-view.active {
+            display: block;
+        }
+
+        .welcome-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 2rem;
+        }
+
+        .welcome-content {
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .welcome-icon {
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+        }
+
+        .welcome-content h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .welcome-content p {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            transition: all var(--transition-normal);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px var(--shadow-light);
+            border-color: var(--primary-color);
+        }
+
+        .feature-card i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .messages {
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .message {
+            margin-bottom: 2rem;
+            animation: messageSlideIn 0.5s ease;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message-avatar.user {
+            background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+            color: white;
+        }
+
+        .message-avatar.assistant {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+        }
+
+        .message-info {
+            flex: 1;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .message-content {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px var(--shadow-light);
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+        }
+
+        .message.assistant .message-content {
+            background: var(--bg-primary);
+            border-left: 4px solid var(--primary-color);
+        }
+       
+        .chat-message-actions {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+       
+        .message-content:hover .chat-message-actions {
+            opacity: 1;
+        }
+
+        .chat-message-actions button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.875rem;
+            padding: 0.25rem;
+        }
+       
+        .message.user .chat-message-actions button {
+            color: white;
+        }
+
+        .question-input-area {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+        }
+
+        .question-input-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .question-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            resize: vertical;
+            transition: all var(--transition-fast);
+        }
+
+        .question-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .question-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .btn-analyze {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-analyze:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(30, 64, 175, 0.4);
+        }
+
+        .btn-analyze:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .question-count {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .loading-indicator.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .briefing-view {
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .briefing-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .briefing-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .briefing-header p {
+            color: var(--text-muted);
+        }
+
+        .briefing-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px var(--shadow-light);
+        }
+
+        .briefing-section {
+            margin-bottom: 2rem;
+        }
+
+        .briefing-section h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metadata-item {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .metadata-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metadata-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .verification-view {
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .verification-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .verification-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .score-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-weight: 700;
+            position: relative;
+        }
+
+        .score-circle.complete {
+            background: linear-gradient(135deg, var(--success-color), #34d399);
+            color: white;
+        }
+
+        .score-circle.mostly_complete {
+            background: linear-gradient(135deg, var(--warning-color), #fbbf24);
+            color: white;
+        }
+
+        .score-circle.incomplete {
+            background: linear-gradient(135deg, var(--error-color), #f87171);
+            color: white;
+        }
+
+        .score-circle.inadequate {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+            color: white;
+        }
+
+        .score-number {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .score-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .assessment-text {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .checklist-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .checklist-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .checklist-icon.pass {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .checklist-icon.fail {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .checklist-text {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            text-align: center;
+        }
+
+        .loading-state i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            animation: spin 2s linear infinite;
+        }
+
+        .loading-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-state p {
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                grid-template-areas:
+                    "nav"
+                    "main";
+                grid-template-columns: 1fr;
+                grid-template-rows: var(--header-height) 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                bottom: 0;
+                width: var(--sidebar-width);
+                z-index: 1200;
+                transform: translateX(-100%);
+                transition: transform var(--transition-normal);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                padding: 0 1rem;
+            }
+
+            .chat-header {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .question-input-area {
+                padding: 1rem;
+            }
+
+            .messages {
+                padding: 1rem;
+            }
+
+            .verification-view,
+            .briefing-view {
+                padding: 1rem;
+            }
+
+            .metadata-grid,
+            .checklist-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .view-modes {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        pre {
+            background: #1e293b;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        code {
+            font-family: var(--font-family-mono);
+            font-size: 0.9em;
+            background: var(--bg-secondary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: #e2e8f0;
+        }
+
+        .drag-over {
+            background: rgba(30, 64, 175, 0.05) !important;
+        }
+        
+        .drag-over::after {
+            content: 'Drop your legal document here';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(30, 64, 175, 0.9);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 600;
+            z-index: 9999;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="fas fa-balance-scale fa-3x"></i>
+            </div>
+            <h2>LegalAI</h2>
+            <p>Initializing Legal Document Analysis...</p>
+        </div>
+    </div>
+
+    <div id="app" class="app-container">
+        <nav class="top-nav">
+            <div class="nav-brand">
+                <i class="fas fa-balance-scale"></i>
+                <span class="brand-text">LegalAI</span>
+                <span class="version-badge">v1.0</span>
+            </div>
+            <div class="nav-controls">
+                <div class="view-modes" id="view-modes" style="display: none;">
+                    <button class="view-mode-btn active" data-view="chat">
+                        <i class="fas fa-comments"></i> Chat
+                    </button>
+                    <button class="view-mode-btn" data-view="briefing">
+                        <i class="fas fa-file-alt"></i> Brief
+                    </button>
+                    <button class="view-mode-btn" data-view="verification">
+                        <i class="fas fa-shield-alt"></i> Verify
+                    </button>
+                </div>
+                <button id="theme-toggle" class="nav-btn" title="Toggle Theme" aria-label="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="sidebar-toggle" class="nav-btn d-lg-none" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Document Upload</h3>
+                <div class="btn-upload" onclick="document.getElementById('file-input').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span id="upload-text">Upload Legal Document</span>
+                </div>
+               
+                <div id="document-info" class="document-info">
+                    <div class="doc-name" id="doc-name">No document uploaded</div>
+                    <div class="doc-stats">
+                        <span><i class="fas fa-file-alt"></i> <span id="doc-size">0 KB</span></span>
+                        <span><i class="fas fa-font"></i> <span id="doc-chars">0 chars</span></span>
+                    </div>
+                    
+                    <div class="document-actions">
+                        <button class="doc-action-btn" id="brief-btn" disabled>
+                            <i class="fas fa-file-alt"></i> Brief
+                        </button>
+                        <button class="doc-action-btn secondary" id="verify-btn" disabled>
+                            <i class="fas fa-shield-alt"></i> Verify
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <div class="analysis-title">
+                    <span>Analysis Status</span>
+                    <div class="status-indicator" id="status-indicator"></div>
+                </div>
+               
+                <div class="analysis-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="chunks-count">0</div>
+                        <div class="stat-label">Document Chunks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="questions-count">0</div>
+                        <div class="stat-label">Questions Asked</div>
+                    </div>
+                </div>
+            </div>
+           
+            <div class="sidebar-section">
+                <h4>Old Chats</h4>
+                <ul class="chat-list" id="old-chats-list">
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="chat-header">
+                <div class="chat-info">
+                    <h1 id="chat-title">Legal Document Analysis</h1>
+                    <p id="chat-description">Upload a legal document and ask questions for AI-powered analysis</p>
+                </div>
+                <div class="chat-controls">
+                    <button id="new-chat-btn" class="chat-btn primary">
+                        <i class="fas fa-plus"></i> New Chat
+                    </button>
+                    <button id="clear-chat-btn" class="chat-btn">
+                        <i class="fas fa-trash"></i> Clear Chat
+                    </button>
+                </div>
+            </header>
+
+            <div class="messages-container" id="messages-container">
+                <!-- Chat View -->
+                <div class="content-view active" id="chat-view">
+                    <div class="welcome-screen" id="welcome-screen">
+                        <div class="welcome-content">
+                            <div class="welcome-icon">
+                                <i class="fas fa-gavel fa-4x"></i>
+                            </div>
+                            <h2>Welcome to LegalAI</h2>
+                            <p>Your intelligent legal document analysis assistant powered by advanced RAG technology. Upload legal documents and get instant, accurate analysis with relevant legal precedents.</p>
+                           
+                            <div class="feature-grid">
+                                <div class="feature-card">
+                                    <i class="fas fa-upload"></i>
+                                    <h3>Multi-Format Support</h3>
+                                    <p>PDF, DOC, TXT, and image documents with OCR</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-search"></i>
+                                    <h3>Smart Analysis</h3>
+                                    <p>AI-powered document chunking and similarity search</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-book-open"></i>
+                                    <h3>Legal Knowledge</h3>
+                                    <p>Access to 180k+ legal cases and precedents</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-language"></i>
+                                    <h3>Multi-Language</h3>
+                                    <p>Support for English and Indian regional languages</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-file-alt"></i>
+                                    <h3>Document Briefing</h3>
+                                    <p>Automated structured summaries of legal documents</p>
+                                </div>
+                                <div class="feature-card">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <h3>Document Verification</h3>
+                                    <p>Comprehensive legal document completeness analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="messages" id="messages">
+                    </div>
+                </div>
+
+                <!-- Briefing View -->
+                <div class="content-view" id="briefing-view">
+                    <div class="briefing-view">
+                        <div class="briefing-header">
+                            <h2>Document Brief</h2>
+                            <p>Structured analysis of your legal document</p>
+                        </div>
+                        
+                        <div id="briefing-loading" class="loading-state">
+                            <i class="fas fa-file-alt"></i>
+                            <h3>Generating Document Brief...</h3>
+                            <p>Please wait while we analyze your document structure and content.</p>
+                        </div>
+
+                        <div id="briefing-content" style="display: none;">
+                            <!-- Content will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verification View -->
+                <div class="content-view" id="verification-view">
+                    <div class="verification-view">
+                        <div class="verification-header">
+                            <h2>Document Verification</h2>
+                            <p>Legal completeness and authenticity analysis</p>
+                        </div>
+                        
+                        <div id="verification-loading" class="loading-state">
+                            <i class="fas fa-shield-alt"></i>
+                            <h3>Verifying Document...</h3>
+                            <p>Analyzing document structure, legal elements, and precedent similarities.</p>
+                        </div>
+
+                        <div id="verification-content" style="display: none;">
+                            <!-- Content will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question-input-area" id="question-input-area" style="display: none;">
+                <div class="question-input-container">
+                    <textarea
+                        id="question-input"
+                        class="question-textarea"
+                        placeholder="Ask questions about your legal document...&#10;&#10;Examples:&#10;• What is the main purpose of this document?&#10;• What are the key obligations mentioned?&#10;• Are there any important dates or deadlines?&#10;• What legal precedents apply to this case?"
+                        rows="4"
+                    ></textarea>
+                   
+                    <div class="question-actions">
+                        <div class="loading-indicator" id="loading-indicator">
+                            <div class="spinner"></div>
+                            <span>Analyzing document and searching legal knowledge base...</span>
+                        </div>
+                        <div class="question-count">
+                            <span id="char-count">0</span>/2000 characters
+                        </div>
+                        <button id="analyze-btn" class="btn-analyze">
+                            <i class="fas fa-search"></i>
+                            Analyze Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" style="display: none;">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+   
+    <script>
+        // Global state
+        let currentDocument = null;
+        let currentFileId = null;
+        let questionCount = 0;
+        let analysisInProgress = false;
+        let currentChatHistory = [];
+        let currentChatId = null;
+        let chatDirty = false;
+        let currentView = 'chat';
+
+        // DOM elements
+        const loadingScreen = document.getElementById('loading-screen');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const messagesContainer = document.getElementById('messages');
+        const questionInputArea = document.getElementById('question-input-area');
+        const fileInput = document.getElementById('file-input');
+        const uploadText = document.getElementById('upload-text');
+        const documentInfo = document.getElementById('document-info');
+        const questionInput = document.getElementById('question-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const charCount = document.getElementById('char-count');
+        const chunksCount = document.getElementById('chunks-count');
+        const questionsCount = document.getElementById('questions-count');
+        const statusIndicator = document.getElementById('status-indicator');
+        const themeToggle = document.getElementById('theme-toggle');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const clearChatBtn = document.getElementById('clear-chat-btn');
+        const oldChatsList = document.getElementById('old-chats-list');
+        const chatTitle = document.getElementById('chat-title');
+        const viewModes = document.getElementById('view-modes');
+        const briefBtn = document.getElementById('brief-btn');
+        const verifyBtn = document.getElementById('verify-btn');
+
+        // API base URL
+        const API_BASE = window.location.origin + '/api';
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkBackendStatus();
+            initializeEventListeners();
+            ChatManager.loadAllChats();
+        });
+
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+               
+                if (data.status === 'ready') {
+                    setTimeout(() => {
+                        loadingScreen.classList.add('hidden');
+                    }, 1000);
+                } else {
+                    loadingScreen.querySelector('p').textContent =
+                        'Backend is still initializing. Please wait...';
+                    setTimeout(checkBackendStatus, 3000);
+                }
+            } catch (error) {
+                console.error('Failed to check backend status:', error);
+                loadingScreen.querySelector('p').textContent =
+                    'Cannot connect to backend. Please make sure the server is running.';
+                setTimeout(checkBackendStatus, 5000);
+            }
+        }
+
+        function initializeEventListeners() {
+            // File upload handling
+            fileInput.addEventListener('change', handleFileUpload);
+           
+            // Question input handling
+            questionInput.addEventListener('input', updateCharCount);
+            questionInput.addEventListener('keydown', handleQuestionKeydown);
+           
+            // Analyze button
+            analyzeBtn.addEventListener('click', handleAnalysis);
+           
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+           
+            // Sidebar toggle (mobile)
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+
+            // New chat button
+            newChatBtn.addEventListener('click', handleNewChat);
+           
+            // Clear chat button
+            clearChatBtn.addEventListener('click', handleDeleteAllMessages);
+
+            // View mode buttons
+            document.querySelectorAll('.view-mode-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const view = e.target.closest('.view-mode-btn').dataset.view;
+                    switchView(view);
+                });
+            });
+
+            // Document action buttons
+            briefBtn.addEventListener('click', () => switchView('briefing'));
+            verifyBtn.addEventListener('click', () => switchView('verification'));
+
+            // Drag and drop for file upload
+            setupDragAndDrop();
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (chatDirty && currentChatId) {
+                ChatManager.saveCurrentChat();
+            }
+            
+            ChatManager.startNewChat();
+            currentDocument = file;
+
+            // Update UI
+            const uploadBtn = document.querySelector('.btn-upload');
+            uploadBtn.classList.add('has-file');
+            uploadText.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> ${file.name}`;
+
+            documentInfo.classList.add('visible');
+            document.getElementById('doc-name').textContent = file.name;
+            document.getElementById('doc-size').textContent = formatFileSize(file.size);
+
+            statusIndicator.className = 'status-indicator processing';
+            welcomeScreen.style.display = 'none';
+            questionInputArea.style.display = 'block';
+            viewModes.style.display = 'flex';
+
+            // Upload to backend
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const res = await fetch(`${API_BASE}/upload`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || "Upload failed");
+                }
+               
+                const data = await res.json();
+
+                currentFileId = data.file_id;
+               
+                document.getElementById('doc-chars').textContent = `${data.character_count} chars`;
+                chunksCount.textContent = data.chunk_count;
+                statusIndicator.className = 'status-indicator complete';
+                analyzeBtn.disabled = false;
+                briefBtn.disabled = false;
+                verifyBtn.disabled = false;
+               
+                addMessage('assistant', 'LegalAI',
+                    `✅ Document "${file.name}" uploaded and processed successfully!\nI found ${data.chunk_count} relevant sections. You can now ask questions about this document, generate a brief, or verify its completeness.`);
+               
+            } catch (err) {
+                console.error("Upload error:", err);
+                statusIndicator.className = 'status-indicator error';
+               
+                addMessage('assistant', 'LegalAI',
+                    `❌ Failed to upload document: ${err.message}. Please try again.`);
+               
+                resetUploadUI();
+            }
+        }
+
+        function resetUploadUI() {
+            const uploadBtn = document.querySelector('.btn-upload');
+            uploadBtn.classList.remove('has-file');
+            uploadText.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Upload Legal Document`;
+            documentInfo.classList.remove('visible');
+            welcomeScreen.style.display = 'flex';
+            questionInputArea.style.display = 'none';
+            viewModes.style.display = 'none';
+            briefBtn.disabled = true;
+            verifyBtn.disabled = true;
+        }
+
+        function switchView(view) {
+            if (view === currentView) return;
+
+            // Update view mode buttons
+            document.querySelectorAll('.view-mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === view) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Hide all content views
+            document.querySelectorAll('.content-view').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected view
+            document.getElementById(`${view}-view`).classList.add('active');
+
+            // Update question input visibility
+            questionInputArea.style.display = view === 'chat' ? 'block' : 'none';
+
+            currentView = view;
+
+            // Load content for the selected view
+            if (view === 'briefing' && currentFileId) {
+                loadBriefingView();
+            } else if (view === 'verification' && currentFileId) {
+                loadVerificationView();
+            }
+        }
+
+        async function loadBriefingView() {
+            const briefingLoading = document.getElementById('briefing-loading');
+            const briefingContent = document.getElementById('briefing-content');
+            
+            briefingLoading.style.display = 'flex';
+            briefingContent.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/brief`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_id: currentFileId
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate brief');
+                }
+
+                const data = await response.json();
+                displayBriefing(data.brief, data.document_info);
+
+            } catch (error) {
+                console.error('Briefing error:', error);
+                briefingContent.innerHTML = `
+                    <div class="briefing-card">
+                        <div style="text-align: center; color: var(--error-color);">
+                            <i class="fas fa-exclamation-triangle fa-2x" style="margin-bottom: 1rem;"></i>
+                            <h3>Failed to Generate Brief</h3>
+                            <p>${error.message}</p>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                briefingLoading.style.display = 'none';
+                briefingContent.style.display = 'block';
+            }
+        }
+
+        function displayBriefing(brief, documentInfo) {
+            const briefingContent = document.getElementById('briefing-content');
+            
+            let html = `
+                <div class="briefing-card">
+                    <div class="briefing-section">
+                        <h3><i class="fas fa-info-circle"></i> Document Metadata</h3>
+                        <div class="metadata-grid">
+            `;
+
+            if (brief.metadata) {
+                Object.entries(brief.metadata).forEach(([key, value]) => {
+                    if (value && value !== '' && (Array.isArray(value) ? value.length > 0 : true)) {
+                        html += `
+                            <div class="metadata-item">
+                                <div class="metadata-label">${key.replace(/_/g, ' ')}</div>
+                                <div class="metadata-value">
+                                    ${Array.isArray(value) ? value.join(', ') : value}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            html += `</div></div>`;
+
+            if (brief.summary) {
+                html += `
+                    <div class="briefing-card">
+                        <div class="briefing-section">
+                            <h3><i class="fas fa-clipboard"></i> Executive Summary</h3>
+                            <p style="line-height: 1.6; color: var(--text-primary);">${brief.summary}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (brief.key_sections && brief.key_sections.length > 0) {
+                html += `
+                    <div class="briefing-card">
+                        <div class="briefing-section">
+                            <h3><i class="fas fa-list"></i> Key Sections</h3>
+                `;
+                brief.key_sections.forEach((section, index) => {
+                    html += `
+                        <div class="metadata-item" style="margin-bottom: 1rem;">
+                            <div class="metadata-label">${section.section || `Section ${index + 1}`}</div>
+                            <div class="metadata-value">${section.content}</div>
+                        </div>
+                    `;
+                });
+                html += `</div></div>`;
+            }
+
+            briefingContent.innerHTML = html;
+        }
+
+        async function loadVerificationView() {
+            const verificationLoading = document.getElementById('verification-loading');
+            const verificationContent = document.getElementById('verification-content');
+            
+            verificationLoading.style.display = 'flex';
+            verificationContent.style.display = 'none';
+
+            try {
+                const response = await fetch(`${API_BASE}/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        file_id: currentFileId
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to verify document');
+                }
+
+                const data = await response.json();
+                displayVerification(data.verification);
+
+            } catch (error) {
+                console.error('Verification error:', error);
+                verificationContent.innerHTML = `
+                    <div style="text-align: center; color: var(--error-color); padding: 2rem;">
+                        <i class="fas fa-exclamation-triangle fa-2x" style="margin-bottom: 1rem;"></i>
+                        <h3>Failed to Verify Document</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                verificationLoading.style.display = 'none';
+                verificationContent.style.display = 'block';
+            }
+        }
+
+        function displayVerification(verification) {
+            const verificationContent = document.getElementById('verification-content');
+            
+            const scorePercentage = Math.round((verification.sufficiency_score / verification.total_checks) * 100);
+            
+            let html = `
+                <div class="score-display">
+                    <div class="score-circle ${verification.assessment}">
+                        <div class="score-number">${verification.sufficiency_score}/${verification.total_checks}</div>
+                        <div class="score-label">${scorePercentage}% Complete</div>
+                    </div>
+                    <div class="assessment-text">${verification.assessment_text}</div>
+                </div>
+
+                <div class="briefing-card">
+                    <div class="briefing-section">
+                        <h3><i class="fas fa-clipboard-check"></i> Document Completeness Checklist</h3>
+                        <div class="checklist-grid">
+            `;
+
+            Object.entries(verification.rule_checklist).forEach(([rule, passed]) => {
+                const ruleName = rule.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                html += `
+                    <div class="checklist-item">
+                        <div class="checklist-icon ${passed ? 'pass' : 'fail'}">
+                            <i class="fas fa-${passed ? 'check' : 'times'}"></i>
+                        </div>
+                        <div class="checklist-text">${ruleName}</div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+
+            verificationContent.innerHTML = html;
+        }
+
+        async function handleAnalysis() {
+            const question = questionInput.value.trim();
+            if (!question || analysisInProgress) return;
+
+            analysisInProgress = true;
+            analyzeBtn.disabled = true;
+            loadingIndicator.classList.add('active');
+
+            addMessage('user', 'You', question);
+
+            questionInput.value = '';
+            updateCharCount();
+
+            questionCount++;
+            questionsCount.textContent = questionCount;
+
+            try {
+                let response;
+                
+                if (currentFileId) {
+                    const res = await fetch(`${API_BASE}/analyze`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            question: question,
+                            file_id: currentFileId
+                        })
+                    });
+
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        throw new Error(errorData.error || "Analysis failed");
+                    }
+                   
+                    const data = await res.json();
+                    response = data.response;
+                    
+                    if (data.external_sources > 0 || data.document_sources > 0) {
+                        response += `\n\n*Based on ${data.external_sources} legal precedents and ${data.document_sources} document sections*`;
+                    }
+                } else {
+                    const res = await fetch(`${API_BASE}/chat`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            question: question
+                        })
+                    });
+
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        throw new Error(errorData.error || "Chat failed");
+                    }
+                   
+                    const data = await res.json();
+                    response = data.response;
+                }
+               
+                addMessage('assistant', 'LegalAI', response);
+               
+            } catch (err) {
+                console.error("Analysis error:", err);
+                addMessage('assistant', 'LegalAI',
+                    `❌ Sorry, something went wrong: ${err.message}`);
+            } finally {
+                analysisInProgress = false;
+                analyzeBtn.disabled = false;
+                loadingIndicator.classList.remove('active');
+            }
+        }
+
+        function renderMessageElement(msg) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${msg.type}`;
+           
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="message-avatar ${msg.type}">
+                        ${msg.type === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>'}
+                    </div>
+                    <div class="message-info">
+                        <div class="message-sender">${msg.sender}</div>
+                        <div class="message-time">${msg.timestamp}</div>
+                    </div>
+                </div>
+                <div class="message-content">
+                    <div class="chat-message-actions">
+                        <button class="delete-message-btn" title="Delete Message"><i class="fas fa-trash"></i></button>
+                    </div>
+                    ${formatMessageContent(msg.content)}
+                </div>
+            `;
+           
+            const deleteBtn = messageDiv.querySelector('.delete-message-btn');
+            deleteBtn.addEventListener('click', () => deleteMessage(messageDiv, msg));
+           
+            return messageDiv;
+        }
+
+        function addMessage(type, sender, content) {
+            const timestamp = new Date().toLocaleTimeString();
+            const msg = { type, sender, content, timestamp };
+            
+            const messageDiv = renderMessageElement(msg);
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.appendChild(messageDiv);
+            document.getElementById('messages-container').scrollTop = document.getElementById('messages-container').scrollHeight;
+
+            currentChatHistory.push(msg);
+            chatDirty = true;
+
+            if (currentChatHistory.length === 1 && type === 'user') {
+                ChatManager.updateChatTitle(content);
+            }
+        }
+       
+        function deleteMessage(messageElement, msgToDelete) {
+            const index = currentChatHistory.findIndex(msg => 
+                msg.timestamp === msgToDelete.timestamp && 
+                msg.content === msgToDelete.content &&
+                msg.sender === msgToDelete.sender
+            );
+            
+            if (index !== -1) {
+                messageElement.parentNode.removeChild(messageElement);
+                currentChatHistory.splice(index, 1);
+                chatDirty = true;
+                ChatManager.saveCurrentChat();
+            }
+        }
+       
+        function clearAllMessages() {
+            const messagesEl = document.getElementById('messages');
+            messagesEl.innerHTML = '';
+            currentChatHistory = [];
+            questionsCount.textContent = 0;
+            questionCount = 0;
+            chatDirty = true;
+        }
+       
+        function handleNewChat() {
+            ChatManager.saveCurrentChat();
+            ChatManager.startNewChat();
+        }
+       
+        function handleDeleteAllMessages() {
+            if (confirm("Are you sure you want to clear this entire chat? This action cannot be undone.")) {
+                clearAllMessages();
+                ChatManager.removeChat(currentChatId);
+                ChatManager.startNewChat();
+            }
+        }
+
+        function formatMessageContent(content) {
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>')
+                .replace(/• /g, '<br>• ');
+        }
+
+        function handleQuestionKeydown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                if (!analysisInProgress && questionInput.value.trim()) {
+                    handleAnalysis();
+                }
+            }
+        }
+
+        function updateCharCount() {
+            const count = questionInput.value.length;
+            charCount.textContent = count;
+           
+            if (count > 1800) {
+                charCount.style.color = 'var(--error-color)';
+            } else if (count > 1500) {
+                charCount.style.color = 'var(--warning-color)';
+            } else {
+                charCount.style.color = 'var(--text-muted)';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+           
+            document.documentElement.setAttribute('data-theme', newTheme);
+           
+            const icon = themeToggle.querySelector('i');
+            icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+           
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('open');
+        }
+
+        function setupDragAndDrop() {
+            const dropZone = document.body;
+           
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+           
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+            });
+           
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+               
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (isValidFileType(file)) {
+                        fileInput.files = files;
+                        handleFileUpload({ target: { files: [file] } });
+                    }
+                }
+            });
+        }
+
+        function isValidFileType(file) {
+            const validTypes = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'text/plain',
+                'image/jpeg',
+                'image/png',
+                'image/jpg'
+            ];
+            return validTypes.includes(file.type);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        const ChatManager = {
+            saveCurrentChat: function() {
+                if (!currentChatId || !chatDirty || currentChatHistory.length === 0) return;
+               
+                const chatObject = {
+                    id: currentChatId,
+                    title: chatTitle.textContent,
+                    messages: currentChatHistory,
+                    timestamp: new Date().toISOString(),
+                    fileId: currentFileId
+                };
+                localStorage.setItem(`chat-${chatObject.id}`, JSON.stringify(chatObject));
+                chatDirty = false;
+                this.loadAllChats();
+            },
+
+            loadChat: function(chatId) {
+                if (chatDirty && currentChatId) {
+                    this.saveCurrentChat();
+                }
+
+                const chatData = localStorage.getItem(`chat-${chatId}`);
+                if (!chatData) return;
+               
+                const chatObject = JSON.parse(chatData);
+               
+                const messagesEl = document.getElementById('messages');
+                messagesEl.innerHTML = '';
+                currentChatHistory = [];
+                questionCount = 0;
+
+                const fragment = document.createDocumentFragment();
+                for (const msg of chatObject.messages) {
+                    const element = renderMessageElement(msg);
+                    fragment.appendChild(element);
+                }
+                messagesEl.appendChild(fragment);
+
+                currentChatId = chatObject.id;
+                chatTitle.textContent = chatObject.title;
+                currentChatHistory = [...chatObject.messages];
+                questionCount = chatObject.messages.filter(msg => msg.type === 'user').length;
+                questionsCount.textContent = questionCount;
+                chatDirty = false;
+                
+                if (chatObject.fileId) {
+                    currentFileId = chatObject.fileId;
+                    briefBtn.disabled = false;
+                    verifyBtn.disabled = false;
+                    viewModes.style.display = 'flex';
+                }
+               
+                welcomeScreen.style.display = 'none';
+                questionInputArea.style.display = 'block';
+                switchView('chat');
+
+                this.loadAllChats();
+                const activeItem = document.getElementById(`chat-item-${chatId}`);
+                if (activeItem) {
+                    document.querySelectorAll('.chat-list-item').forEach(el => el.classList.remove('active'));
+                    activeItem.classList.add('active');
+                }
+            },
+
+            loadAllChats: function() {
+                oldChatsList.innerHTML = '';
+                let chats = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('chat-')) {
+                        const chatData = JSON.parse(localStorage.getItem(key));
+                        chats.push(chatData);
+                    }
+                }
+
+                chats.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+               
+                chats.forEach(chat => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'chat-list-item';
+                    listItem.id = `chat-item-${chat.id}`;
+                    listItem.innerHTML = `
+                        <span class="chat-title-text">${chat.title}</span>
+                        <button class="chat-list-item-delete" data-id="${chat.id}" title="Delete Chat"><i class="fas fa-times"></i></button>
+                    `;
+                    listItem.addEventListener('click', () => this.loadChat(chat.id));
+                   
+                    const deleteBtn = listItem.querySelector('.chat-list-item-delete');
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.removeChat(chat.id);
+                        this.loadAllChats();
+                    });
+
+                    oldChatsList.appendChild(listItem);
+                });
+
+                if (currentChatId) {
+                    const activeItem = document.getElementById(`chat-item-${currentChatId}`);
+                    if (activeItem) {
+                        activeItem.classList.add('active');
+                    }
+                }
+            },
+
+            removeChat: function(chatId) {
+                localStorage.removeItem(`chat-${chatId}`);
+            },
+
+            startNewChat: function() {
+                if (chatDirty && currentChatId) {
+                    this.saveCurrentChat();
+                }
+
+                const messagesEl = document.getElementById('messages');
+                messagesEl.innerHTML = '';
+                currentChatHistory = [];
+                questionCount = 0;
+                questionsCount.textContent = 0;
+                currentChatId = Date.now().toString();
+                chatTitle.textContent = "Legal Document Analysis";
+                chatDirty = false;
+    
+                currentFileId = null;
+                currentDocument = null;
+    
+                document.getElementById('doc-name').textContent = "No document uploaded";
+                document.getElementById('doc-size').textContent = "0 KB";
+                document.getElementById('doc-chars').textContent = "0 chars";
+                chunksCount.textContent = 0;
+    
+                const uploadBtn = document.querySelector('.btn-upload');
+                uploadBtn.classList.remove('has-file');
+                uploadText.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Upload Legal Document`;
+                documentInfo.classList.remove('visible');
+    
+                statusIndicator.className = 'status-indicator';
+    
+                briefBtn.disabled = true;
+                verifyBtn.disabled = true;
+                analyzeBtn.disabled = true;
+    
+                viewModes.style.display = 'none';
+                questionInputArea.style.display = 'none';
+                welcomeScreen.style.display = 'flex';
+                switchView('chat');
+                this.loadAllChats();
+            },
+            
+            updateChatTitle: function(firstQuestion) {
+                const title = firstQuestion.length > 30 ? firstQuestion.substring(0, 30) + '...' : firstQuestion;
+                chatTitle.textContent = title;
+                chatDirty = true;
+            }
+        };
+
+        // Load saved theme on startup
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            const icon = themeToggle.querySelector('i');
+            icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    </script>
+</body>
+</html>
