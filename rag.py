@@ -15,7 +15,11 @@ from PIL import Image
 from langdetect import detect_langs
 import easyocr
 import fitz  # PyMuPDF - Better PDF handling
+from dotenv import load_dotenv
+import os
 
+# Load environment variables from .env
+load_dotenv()
 # ========== CONFIG ==========
 INDEX_PATH = "faiss_index.bin"
 META_PATH = "faiss_index.bin.meta.json"
@@ -30,8 +34,9 @@ CHUNK_SIZE = 500  # characters per chunk
 CHUNK_OVERLAP = 100  # overlap between chunks
 
 # ============================
-GEMINI_API_KEY = "AIzaSyAGhIHd-XCEr0wtWHvUn_Dbg_DMuRqjDaM"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
+
 
 # ----------------------------- 
 # Enhanced PDF Extraction Functions
@@ -774,4 +779,5 @@ def main():
             print(f"\n🤖 Answer:\n{answer}")
 
 if __name__ == "__main__":
+
     main()
